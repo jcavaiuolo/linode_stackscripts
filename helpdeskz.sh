@@ -15,7 +15,12 @@ sudo a2enmod rewrite
 wget https://github.com/helpdesk-z/helpdeskz-dev/archive/refs/heads/master.zip
 unzip master.zip -d /var/www/
 
+## Configure DB
+
 mysql -u root -e "CREATE DATABASE helpdeskz; CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD'; GRANT ALL PRIVILEGES ON *.* to '$DB_USER'@'localhost' WITH GRANT OPTION;"
+mv /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.old
+
+## Configure Apache
 
 echo '<VirtualHost *:80>
         ServerAdmin webmaster@localhost
@@ -26,6 +31,8 @@ echo '<VirtualHost *:80>
             AllowOverride All
         </Directory>
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
+## Configure HelpDeskZ
 
 echo "<?php
 namespace Config;
@@ -43,6 +50,8 @@ class Helpdesk extends BaseConfig
     const DEFAULT_LANG = 'en';
     const STAFF_URI = 'staff';
 }" > /var/www/helpdeskz-dev-master/hdz/app/Config/Helpdesk.php
+
+## Configure .htaccess
 
 echo '<IfModule mod_rewrite.c>
         Options +FollowSymlinks
@@ -62,13 +71,18 @@ echo '<IfModule mod_rewrite.c>
     ErrorDocument 404 index.php
 </IfModule>' > /var/www/helpdeskz-dev-master/.htaccess
 
+## Configure .htaccess
+
 echo '<?php
 phpinfo( );
 ?>' > /var/www/helpdeskz-dev-master/info.php
 
+## Configure permissions
+
 chmod 0777 /var/www/helpdeskz-dev-master/hdz/writable -R
 chmod 0777 /var/www/helpdeskz-dev-master/upload -R
 
+# For this line to work the DNS needs to be pointing to the proper linode public IP, otherwise it will fail and the installation will only work on plain http
 certbot --apache --non-interactive --agree-tos -m $CERT_EMAIL --domains $SITE_URL --redirect
 
 reboot
